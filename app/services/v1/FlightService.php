@@ -4,6 +4,8 @@ namespace App\Services\v1;
 
 use App\Flight;
 use App\Airport;
+//use Illuminate\Support\Facades\Validator;
+use Validator;
 
 class FlightService
 {
@@ -16,6 +18,20 @@ class FlightService
         'status',
         'flightNumber'
     ];
+    protected $rules = [
+        'flightNumber' => 'required',
+        'status' => 'required|flightstatus',
+        'arrival.datetime' => 'required|date',
+        'arrival.iataCode' => 'required',
+        'departure.datetime' => 'required|date',
+        'departure.iataCode' => 'required'
+    ];
+
+    public function validate($flight)
+    {
+        $validator = Validator::make($flight, $this->rules);
+        $validator->validate();
+    }
 
     public function getFlights($parameters)
     {
@@ -50,6 +66,38 @@ class FlightService
         $flight->save();
 
         return $this->filterFlights([$flight]);
+    }
+
+    public function updateFlight($req, $flightNumber)
+    {
+        $flight = Flight::where('flightNumber', $flightNumber)->firstOrFail();
+
+        $arrivalAirport = $req->input('arrival.iataCode');
+        $departureAirport = $req->input('departure.iataCode');
+        $airports = Airport::whereIn('iataCode', [$arrivalAirport, $departureAirport])->get();
+        $codes = [];
+
+        foreach ($airports as $airport) {
+            $codes[$airport->iataCode] = $airport->id;
+        }
+
+        $flight->flightNumber = $req->input('flightNumber');
+        $flight->status = $req->input('status');
+        $flight->arrivalAirport_id = $codes[$arrivalAirport];
+        $flight->arrivalDateTime = $req->input('arrival.datetime');
+        $flight->departureAirport_id = $codes[$departureAirport];
+        $flight->departureDateTime = $req->input('departure.datetime');
+
+        $flight->save();
+
+        return $this->filterFlights([$flight]);
+    }
+
+    public function deleteFlight($flightNumber)
+    {
+        $flight = Flight::where('flightNumber', $flightNumber)->firstOrFail();
+
+        $flight->delete();
     }
 
     protected function filterFlights($flights, $keys = [])

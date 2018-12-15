@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\v1;
 
 use App\Services\v1\FlightService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
@@ -37,12 +38,30 @@ class FlightController extends Controller
      */
     public function store(Request $request)
     {
+        $this->flights->validate($request->all());
         try {
             $flight = $this->flights->createFlight($request);
             return response()->json($flight, 201);
         } catch (Exception $e){
             return response()->json(['message'=>$e->getMessage()],500);
         }
+        // Postman: POST
+        // Content-Type: application/json
+        // Accept : application/json
+        // {
+        //	"flightNumber":"JWM12345",
+        //	"status":"ontime",
+        //	"arrival":
+        //	{
+        //		"datetime":"2018-05-10 22:15:08",
+        //		"iataCode":"iuo"
+        //	},
+        //	"departure":
+        //	{
+        //		"datetime":"2018-05-10 20:15:08",
+        //		"iataCode":"3Bc"
+        //	}
+        //}
     }
 
     /**
@@ -70,7 +89,35 @@ class FlightController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $this->flights->validate($request->all());
+        try {
+            $flight = $this->flights->updateFlight($request,$id);
+            return response()->json($flight, 200);
+        }
+        catch (ModelNotFoundException $ex){
+            throw $ex;
+        }
+        catch (Exception $e){
+            return response()->json(['message'=>$e->getMessage()],500);
+        }
+        // Postman: PUT
+        // Content-Type: application/json
+        // Accept : application/json
+        // http://127.0.0.1:8000/api/v1/flights/JWM12345
+        //{
+        //	"flightNumber":"JWM12345",
+        //	"status":"delayed",
+        //	"arrival":
+        //	{
+        //		"datetime":"2018-05-10 22:15:08",
+        //		"iataCode":"iuo"
+        //	},
+        //	"departure":
+        //	{
+        //		"datetime":"2018-05-10 20:15:08",
+        //		"iataCode":"3Bc"
+        //	}
+        //}
     }
 
     /**
@@ -81,6 +128,15 @@ class FlightController extends Controller
      */
     public function destroy($id)
     {
-        //
+        try {
+            $flight = $this->flights->deleteFlight($id);
+            return response()->make('',204);
+        }
+        catch (ModelNotFoundException $ex){
+            throw $ex;
+        }
+        catch (Exception $e){
+            return response()->json(['message'=>$e->getMessage()],500);
+        }
     }
 }
