@@ -14,6 +14,10 @@ class FlightController extends Controller
     public function __construct(FlightService $service)
     {
         $this->flights = $service;
+
+        $this->middleware('auth:api',['only'=>['store','update','destroy']]);
+        // add the user token to the api Header
+        // Authorization: Bearer FJ98bMWcsfUpXwA4oozsfaToNmJuBoYl3cBNZzdk5dvkuXl56RZZVyxyFNKW
     }
 
     /**
